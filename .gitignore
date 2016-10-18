@@ -250,3 +250,8 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Custom
+3rdParty/KodiStubs
+BitportViewer_ConsoleTest/appSettings.json
+BitportViewer_Kodi/bitportToken.json

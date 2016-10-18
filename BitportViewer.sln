@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitportViewer_ConsoleTest", "BitportViewer_ConsoleTest\BitportViewer_ConsoleTest.csproj", "{AFB65ECF-408D-4288-8348-B0E9B046A4E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitportViewer_Common", "BitportViewer_Common\BitportViewer_Common.csproj", "{FC3D9F8C-9CC7-4288-8BFC-CD5E0A8EB254}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "BitportViewer_Kodi", "BitportViewer_Kodi\BitportViewer_Kodi.pyproj", "{F153A3B8-7A8F-4B4E-A952-0700A455F87A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AFB65ECF-408D-4288-8348-B0E9B046A4E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFB65ECF-408D-4288-8348-B0E9B046A4E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFB65ECF-408D-4288-8348-B0E9B046A4E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFB65ECF-408D-4288-8348-B0E9B046A4E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC3D9F8C-9CC7-4288-8BFC-CD5E0A8EB254}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC3D9F8C-9CC7-4288-8BFC-CD5E0A8EB254}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC3D9F8C-9CC7-4288-8BFC-CD5E0A8EB254}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC3D9F8C-9CC7-4288-8BFC-CD5E0A8EB254}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F153A3B8-7A8F-4B4E-A952-0700A455F87A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F153A3B8-7A8F-4B4E-A952-0700A455F87A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
