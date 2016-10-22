@@ -6,10 +6,10 @@ using System.Text;
 namespace BitportViewer.Common
 {
 
-    public class BitPortResponse
+    public class BitPortResponse<T>
     {
         public Status status { get; set; }
-        public object[] data { get; set; }
+        public T[] data { get; set; }
         public Error[] errors { get; set; }
     }
 
