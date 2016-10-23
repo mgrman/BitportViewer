@@ -17,7 +17,8 @@ class BitportAPI:
         self.access_token = json.loads(tokenJson)["access_token"]
 
 
-    def getFiles(self,code):
+        
+    def getFolder_raw(self,code):
         getFolderUrl = self.apiBaseUrl + "/cloud"
 
         if code != None :
@@ -30,11 +31,14 @@ class BitportAPI:
         files = data["data"][0]["files"]
         folders = data["data"][0]["folders"]
 
-        for folder in folders:
-            subFiles = self.getFiles(folder["code"])
-            files.extend(subFiles)
+        #for folder in folders:
+        #    subFiles = self.getFiles(folder["code"])
+        #    files.extend(subFiles)
 
-        return files
+        result=BP_RawResult();
+        result.folders=folders;
+        result.files=files;
+        return result
 
     def getUrl(self,code,converted):
         if converted:
@@ -43,54 +47,65 @@ class BitportAPI:
             operation = "download"
         getFileUrlUrl = self.apiBaseUrl + "/files/" + code + "/" + operation
 
-        resp = requests.get(getFileUrlUrl,headers={
-            'Authorization':'Bearer ' + self.access_token,
-            "Range": "bytes=0-0"})
+        return getFileUrlUrl+"|Authorization=Bearer "+self.access_token;
 
-        return resp.url
+        #resp = requests.get(getFileUrlUrl,headers={
+        #    'Authorization':'Bearer ' + self.access_token,
+        #    "Range": "bytes=0-0"})
 
+        #return resp.url
 
-    def getAllFiles(self):
-        allFiles = self.getFiles(None)
+    def convertFile(self, file):
+        
+        resultFile = BP_File()
+        resultFile.code = file["code"]
+        resultFile.filename = file["name"]
 
-        result = []
+        nameMatch = self.getNameRegex.match(resultFile.filename)
+
+        if nameMatch:
+            movieGroup = nameMatch.group(1)
+            tvShowGroup = nameMatch.group(2)
+            tvShowEpisodeGroup = nameMatch.group(3)
+            if movieGroup is not None:
+                resultFile.name = movieGroup.replace("."," ").strip().title()
+            elif tvShowGroup is not None:
+                resultFile.name = tvShowGroup.replace("."," ").strip().title() + " " + tvShowEpisodeGroup.upper()
+            else:
+                resultFile.name = resultFile.filename
+        if file["video"]:
+            if self.isTvShowRegex.match(resultFile.name) is not None:
+                resultFile.type = BP_FileType.tv_show
+            else:
+                resultFile.type = BP_FileType.movie
+        else:
+            resultFile.type = BP_FileType.other
+        return resultFile;
+    
+    def convertFolder(self, folder):
+        
+        resultFile = BP_Folder()
+        resultFile.code = folder["code"]
+        resultFile.name = folder["name"]
+        return resultFile;
+
+    def getFolder(self,code):
+        rawResult = self.getFolder_raw(code)
 
         
-
-        for file in allFiles:
-            resultFile = BP_File()
-            resultFile.code = file["code"]
-            resultFile.filename = file["name"]
-
-            nameMatch = self.getNameRegex.match(resultFile.filename)
-
-            if nameMatch:
-                movieGroup = nameMatch.group(1)
-                tvShowGroup = nameMatch.group(2)
-                tvShowEpisodeGroup = nameMatch.group(3)
-                if movieGroup is not None:
-                    resultFile.name = movieGroup.replace("."," ").strip().title()
-                elif tvShowGroup is not None:
-                    resultFile.name = tvShowGroup.replace("."," ").strip().title() + " " + tvShowEpisodeGroup.upper()
-                else:
-                    resultFile.name = resultFile.filename
-
-
-
-            if file["video"]:
-                if self.isTvShowRegex.match(resultFile.name) is not None:
-                    resultFile.type = BP_FileType.tv_show
-                else:
-                    resultFile.type = BP_FileType.movie
-            else:
-                resultFile.type = BP_FileType.other
-            resultFile.url = self.getUrl(resultFile.code,False)
-            #if file.has_key("conversion_status") and file["conversion_status"]
-            #== "converted":
-            #    resultFile.streamUrl = self.getUrl(resultFile.code,True)
-
+        result=[]
+        for file in rawResult.files:
+            resultFile = self.convertFile(file)
             result.append(resultFile)
+        for folder in rawResult.folders:
+            resultFolder = self.convertFolder(folder)
+            result.append(resultFolder)
         return result
+
+
+class BP_RawResult:
+    folders = []
+    files = []
 
 
 class BP_FileType:
@@ -103,4 +118,7 @@ class BP_File:
     code = ""
     name = ""
     filename = ""
-    url = ""
+    
+class BP_Folder:
+    code = ""
+    name = ""

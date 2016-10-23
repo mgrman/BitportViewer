@@ -13,7 +13,7 @@
     <RootNamespace>BitportViewer_Kodi</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
-    <PublishUrl>C:\Users\marti\AppData\Local\Packages\XBMCFoundation.Kodi_4n2hpmxwrvr6p\LocalCache\Roaming\Kodi\addons\script.bitport.viewer</PublishUrl>
+    <PublishUrl>C:\Users\marti\AppData\Local\Packages\XBMCFoundation.Kodi_4n2hpmxwrvr6p\LocalCache\Roaming\Kodi\addons\plugin.video.bitportViewer</PublishUrl>
     <CommandLineArguments>"C:\Users\marti\Desktop\BitportViewer\BitportViewer_Kodi\bitportToken.json"</CommandLineArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -25,6 +25,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="VS_Publish.py" />
     <Compile Include="VS_Starter.py" />
     <Compile Include="BitportAPI.py" />
     <Compile Include="BitportViewer.py" />
