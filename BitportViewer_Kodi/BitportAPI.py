@@ -60,10 +60,11 @@ class BitportAPI:
         resultFile = BP_File()
         resultFile.code = file["code"]
         resultFile.filename = file["name"]
+        resultFile.converted = file["conversion_status"]=="converted"
 
         nameMatch = self.getNameRegex.match(resultFile.filename)
 
-        if nameMatch:
+        if nameMatch is not None:
             movieGroup = nameMatch.group(1)
             tvShowGroup = nameMatch.group(2)
             tvShowEpisodeGroup = nameMatch.group(3)
@@ -73,6 +74,9 @@ class BitportAPI:
                 resultFile.name = tvShowGroup.replace("."," ").strip().title() + " " + tvShowEpisodeGroup.upper()
             else:
                 resultFile.name = resultFile.filename
+        else:
+            resultFile.name=resultFile.filename
+
         if file["video"]:
             if self.isTvShowRegex.match(resultFile.name) is not None:
                 resultFile.type = BP_FileType.tv_show

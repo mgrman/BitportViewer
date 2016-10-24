@@ -59,7 +59,10 @@ namespace BitportViewer.ConsoleTest
 
             var files = GetFiles(client, null).ToArray();
 
+           var bytes= GetFile(client, files.First(),true);
+
             var fileNames=string.Join("\r\n", files.Select(o=>o.name));
+
 
             var links = files.Select(o => GetLink(client, o, true))
                 .ToArray();
@@ -89,6 +92,16 @@ namespace BitportViewer.ConsoleTest
                     yield return file;
                 }
             }
+        }
+
+
+        private static byte[] GetFile(RestClient client, BP_File file, bool converted)
+        {
+            return GetFile(client, file.code,converted);
+        }
+        private static byte[] GetFile(RestClient client, string fileCode, bool converted)
+        {
+            return client.GetFile($"/files/{fileCode}/{(converted ? "stream" : "download")}");
         }
 
 
@@ -124,7 +137,7 @@ namespace BitportViewer.ConsoleTest
             public bool? video { get; set; }
             public string conversion_status { get; set; }
         }
-
+        
         public class BP_Created_At
         {
             public DateTime date { get; set; }
@@ -152,6 +165,13 @@ namespace BitportViewer.ConsoleTest
             return response?.Data;
         }
 
+        public static byte[] GetFile(this RestClient client, string path)
+        {
+            var response = client.Request(path, Method.GET);
+
+            return response.RawBytes;
+        }
+
         public static string Get_LinkOnly(this RestClient client, string path)
         {
             var response = client.Request(path, Method.GET, request =>
@@ -162,6 +182,12 @@ namespace BitportViewer.ConsoleTest
             return response.ResponseUri.ToString();
         }
 
+        public static string GetTextFile(this RestClient client, string path)
+        {
+            var response = client.Request(path, Method.GET);
+
+            return response.Content.ToString();
+        }
 
         private static IRestResponse Request(this RestClient client, string path, Method method, Action<RestRequest> preprocess = null)
         {
@@ -174,7 +200,7 @@ namespace BitportViewer.ConsoleTest
 
 
 
-        private static IRestResponse<T> Request<T>(this RestClient client, string path, Method method, Action<RestRequest> preprocess = null)
+        public static IRestResponse<T> Request<T>(this RestClient client, string path, Method method, Action<RestRequest> preprocess = null)
             where T : class, new()
         {
             var request = PrepareRequest(path, method, preprocess);
@@ -183,7 +209,7 @@ namespace BitportViewer.ConsoleTest
             return response;
         }
 
-        private static RestRequest PrepareRequest(string path, Method method, Action<RestRequest> preprocess = null)
+        public static RestRequest PrepareRequest(string path, Method method, Action<RestRequest> preprocess = null)
         {
 
             var request = new RestRequest(path, method);

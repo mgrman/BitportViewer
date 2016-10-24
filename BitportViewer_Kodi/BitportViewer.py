@@ -20,6 +20,38 @@ api = BitportAPI(tokenPath)
 _url = sys.argv[0]
 _handle = int(sys.argv[1])
 
+def get_list_videoItem(video,stream):
+
+     name=video.name;
+     if stream:
+         name=name+" (stream)";
+         
+     list_item = xbmcgui.ListItem(label=name)
+     list_item.setInfo('video', {'title': name })
+     list_item.setProperty('IsPlayable', 'true')
+     query = {
+         "action":"play",
+         "code":video.code,
+         "name":name,
+         "filename":video.filename,
+         "stream":stream
+         }
+     url = _url + "?" + urllib.urlencode(query)
+     is_folder = False
+     return (url, list_item, is_folder);
+
+
+def get_list_folderItem(folder):
+    list_item = xbmcgui.ListItem(label=folder.name)        
+    list_item.setInfo('video', {'title': folder.name})
+
+    query = {
+        "action":"list",
+        "code":folder.code
+        }
+    url = _url + "?" + urllib.urlencode(query)
+    is_folder = True
+    return (url, list_item, is_folder)
 
 def list_videos(code):
     """
@@ -32,50 +64,13 @@ def list_videos(code):
     # Iterate through videos.
     for item in items:
         if item.__class__ is BP_File:
-            video = item
-
-            if video.type is BP_FileType.other:
+            if item.type is BP_FileType.other:
                 continue
-
-            # Create a list item with a text label and a thumbnail image.
-            list_item = xbmcgui.ListItem(label=video.name)
-            # Set additional info for the list item.
-            list_item.setInfo('video', {'title': video.name })
-            # Set graphics (thumbnail, fanart, banner, poster, landscape etc.)
-            # for
-            # the list item.
-            # Here we use the same image for all items for simplicity's sake.
-            # In a real-life plugin you need to set each image accordingly.
-            #list_item.setArt({'thumb': video['thumb'], 'icon': video['thumb'],
-            #'fanart': video['thumb']})
-            # Set 'IsPlayable' property to 'true'.
-            # This is mandatory for playable items!
-            list_item.setProperty('IsPlayable', 'true')
-            # Create a URL for the plugin recursive callback.
-            # Example:
-            # plugin://plugin.video.example/?action=play&video=http://www.vidsplay.com/vids/crab.mp4
-
-            query = {
-                "action":"play","code":video.code,"name":video.name,"filename":video.filename
-                }
-            url = _url + "?" + urllib.urlencode(query)
-            # Add the list item to a virtual Kodi folder.
-            # is_folder = False means that this item won't open any sub-list.
-            is_folder = False
-            # Add our item to the listing as a 3-element tuple.
-            listing.append((url, list_item, is_folder))
+            listing.append(get_list_videoItem(item,False))
+            if item.converted:
+                listing.append(get_list_videoItem(item,True))
         elif item.__class__ is BP_Folder:
-            folder = item
-            list_item = xbmcgui.ListItem(label=folder.name)        
-            list_item.setInfo('video', {'title': folder.name})
-
-            query = {
-                "action":"list",
-                "code":folder.code
-                }
-            url = _url + "?" + urllib.urlencode(query)
-            is_folder = True
-            listing.append((url, list_item, is_folder))
+            listing.append(get_list_folderItem(item))
 
     # Add our listing to Kodi.
     # Large lists and/or slower systems benefit from adding all items at once
@@ -89,16 +84,17 @@ def list_videos(code):
     xbmcplugin.endOfDirectory(_handle)
 
 
-def play_video(code,name,filename):
+def play_video(code,name,filename,stream):
     """
     Play a video by the provided path.
     :param path: str
     """
 
-    url = api.getUrl(code,False)
+    url = api.getUrl(code,stream)
 
     # Create a playable item with a path to play.
     play_item = xbmcgui.ListItem(path=url,label=name,label2=filename)
+    #play_item.setSubtitles(
     # Pass the item to the Kodi player.
     xbmcplugin.setResolvedUrl(_handle, True, listitem=play_item)
 
@@ -116,7 +112,7 @@ def router(paramstring):
     if params:
         if params['action'] == 'play':
             # Play a video from a provided URL.
-            play_video(params['code'],params['name'],params['filename'])
+            play_video(params['code'],params['name'],params['filename'],params['stream']=="True")
         if params['action'] == 'list':
             # Play a video from a provided URL.
             list_videos(params['code'])
