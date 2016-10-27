@@ -14,7 +14,8 @@ class BitportAPI:
     def __init__(self,tokenPath):
         tokenJsonFile = open(tokenPath, 'r')
         tokenJson = tokenJsonFile.read()
-        self.access_token = json.loads(tokenJson)["access_token"]
+        token=json.loads(tokenJson)
+        self.access_token = token.get("access_token")
 
 
         
@@ -28,8 +29,26 @@ class BitportAPI:
 
         data = resp.json()
 
-        files = data["data"][0]["files"]
-        folders = data["data"][0]["folders"]
+        if data is None:
+            return BP_RawResult();
+
+        data=data.get("data")
+        
+        if data is None or len(data) == 0:
+            return BP_RawResult();
+        
+        data=data[0]
+        
+        if data is None:
+            return BP_RawResult();
+                
+        files = data.get("files")
+        if files is None:
+            files=[]
+
+        folders = data.get("folders")
+        if folders is None:
+            filesfolders=[]
 
         #for folder in folders:
         #    subFiles = self.getFiles(folder["code"])
@@ -58,9 +77,9 @@ class BitportAPI:
     def convertFile(self, file):
         
         resultFile = BP_File()
-        resultFile.code = file["code"]
-        resultFile.filename = file["name"]
-        resultFile.converted = file["conversion_status"]=="converted"
+        resultFile.code = file.get("code")
+        resultFile.filename = file.get("name")
+        resultFile.converted = file.get("conversion_status")=="converted"
 
         nameMatch = self.getNameRegex.match(resultFile.filename)
 
@@ -77,7 +96,7 @@ class BitportAPI:
         else:
             resultFile.name=resultFile.filename
 
-        if file["video"]:
+        if file.get("video"):
             if self.isTvShowRegex.match(resultFile.name) is not None:
                 resultFile.type = BP_FileType.tv_show
             else:
@@ -89,8 +108,8 @@ class BitportAPI:
     def convertFolder(self, folder):
         
         resultFile = BP_Folder()
-        resultFile.code = folder["code"]
-        resultFile.name = folder["name"]
+        resultFile.code = folder.get("code")
+        resultFile.name = folder.get("name")
         return resultFile;
 
     def getFolder(self,code):
