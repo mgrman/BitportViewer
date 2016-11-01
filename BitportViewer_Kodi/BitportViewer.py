@@ -8,6 +8,7 @@ import math
 import urlparse
 import urllib
 from BitportAPI import *
+import mimetypes
 
 xbmc.log("executing main script")
 
@@ -20,26 +21,27 @@ api = BitportAPI(tokenPath)
 _url = sys.argv[0]
 _handle = int(sys.argv[1])
 
+
+
 def get_list_videoItem(video,stream):
 
-     name=video.name;
-     if stream:
-         name=name+" (stream)";
-         
-     list_item = xbmcgui.ListItem(label=name)
-     list_item.setInfo('video', {'title': name })
-     list_item.setProperty('IsPlayable', 'true')
-     query = {
-         "action":"play",
-         "code":video.code,
-         "name":name,
-         "filename":video.filename,
-         "stream":stream
-         }
-     url = _url + "?" + urllib.urlencode(query)
-     is_folder = False
-     return (url, list_item, is_folder);
+    label = video.name
+    if stream:
+        label = label + " (stream)"
+        mimeType="video/mp4"
+    else:
+        mimeType = mimetypes.guess_type(video.filename, strict=False)[0]
+        
+    list_item = xbmcgui.ListItem(label=label)
+    list_item.setInfo('video', {'title':label })
+    list_item.setProperty('IsPlayable', 'true')
 
+    list_item.setProperty('mimetype', mimeType)
+
+    url=api.getUrl(video.code,stream)
+
+    is_folder = False
+    return (url, list_item, is_folder)
 
 def get_list_folderItem(folder):
     list_item = xbmcgui.ListItem(label=folder.name)        
@@ -83,22 +85,6 @@ def list_videos(code):
     # Finish creating a virtual folder.
     xbmcplugin.endOfDirectory(_handle)
 
-
-def play_video(code,name,filename,stream):
-    """
-    Play a video by the provided path.
-    :param path: str
-    """
-
-    url = api.getUrl(code,stream)
-
-    # Create a playable item with a path to play.
-    play_item = xbmcgui.ListItem(path=url,label=name,label2=filename)
-    #play_item.setSubtitles(
-    # Pass the item to the Kodi player.
-    xbmcplugin.setResolvedUrl(_handle, True, listitem=play_item)
-
-
 def router(paramstring):
     """
     Router function that calls other functions
@@ -112,7 +98,7 @@ def router(paramstring):
     if params:
         if params['action'] == 'play':
             # Play a video from a provided URL.
-            play_video(params['code'],params['name'],params['filename'],params['stream']=="True")
+            play_video(params['code'],params['name'],params['filename'],params['stream'] == "True")
         if params['action'] == 'list':
             # Play a video from a provided URL.
             list_videos(params['code'])
