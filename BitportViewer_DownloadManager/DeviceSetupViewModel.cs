@@ -22,6 +22,7 @@ namespace BitportViewer_DownloadManager
 
             DeviceHostName = "libreelec";
             DeviceUserName = "root";
+            DevicePassword = "libreelec";
 #endif
         }
         

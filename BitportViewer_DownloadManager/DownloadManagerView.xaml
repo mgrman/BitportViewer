@@ -66,8 +66,12 @@
                             <ColumnDefinition Width="auto"/>
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Content="{Binding Path}">
-
+                        <Label Grid.Column="0">
+                            <TextBlock>
+                                <Run Text="{Binding Path,Mode=OneWay}"/>
+                                <Run Text="{Binding Completion,Mode=OneWay}"/>
+                                <Run Text="%"/>
+                            </TextBlock>
                         </Label>
                         <StackPanel Grid.Column="1" >
 

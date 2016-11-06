@@ -50,7 +50,7 @@ namespace BitportViewer_SSH
         }
     }
 
-    public class DownloadState:IEquatable<DownloadState>
+    public class DownloadState : IEquatable<DownloadState>
     {
         public enum Statuses
         {
@@ -61,29 +61,32 @@ namespace BitportViewer_SSH
 
         public Statuses Status { get; }
 
+        public int Completion { get; }
+        
         public string Path { get; }
         public int? Pid { get; }
 
-        private DownloadState(Statuses status, string path, int? pid)
+        private DownloadState(Statuses status, string path, int? pid, int completion)
         {
             Status = status;
             Path = path;
             Pid = pid;
+            Completion = completion;
         }
 
-        public static DownloadState CreateActive(string path, int pid)
+        public static DownloadState CreateActive(string path, int pid, int completion)
         {
-            return new DownloadState(Statuses.Active, path, pid);
+            return new DownloadState(Statuses.Active, path, pid, completion);
         }
 
         public static DownloadState CreateFinished(string path)
         {
-            return new DownloadState(Statuses.Finished, path, null);
+            return new DownloadState(Statuses.Finished, path, null,100);
         }
 
         public override string ToString()
         {
-            return $"Path:\"{Path}\", Status:\"{Status}\", Pid:\"{Pid}\"";
+            return $"Path:\"{Path}\", Status:\"{Status}\", Pid:\"{Pid}\", {Completion}%";
         }
 
         public bool Equals(DownloadState other)
@@ -93,7 +96,8 @@ namespace BitportViewer_SSH
 
             return this.Path == other.Path &&
                 this.Status == other.Status &&
-                this.Pid == other.Pid;
+                this.Pid == other.Pid &&
+                this.Completion == other.Completion;
         }
 
         public override bool Equals(object obj)
@@ -113,6 +117,8 @@ namespace BitportViewer_SSH
 
         private SshClient sshClient { get; }
 
+        private object _communicationLock = new object();
+
         public DownloadManager(DeviceSetup setup)
         {
             Setup = setup;
@@ -124,7 +130,7 @@ namespace BitportViewer_SSH
             {
                 sshClient.Connect();
             }
-            catch (Exception )
+            catch (Exception)
             {
 
             }
@@ -145,11 +151,25 @@ namespace BitportViewer_SSH
             sshClient.Connect();
         }
 
+        private const string DownloadCommand = "wget -c \"{0}\" -O \"{1}\" 2>&1";
+        //private const string DownloadCommand = "curl \"{0}\" --progress-bar -o \"{1}\" 2>&1";
+        //private static readonly string DownloadCommandRegex = "^" + Regex.Replace(DownloadCommand, "\"{\\d}\"", "(.*?)") + "$";
+        private static readonly string DownloadCommandRegex = "^wget -c (.*?) -O (.*?)$";
+
         public void StartDownloadingFile(DownloadInfo info)
         {
             ValidateIsConnected();
 
-            string startDownloadCmd = $"nohup sh -c 'date && wget -qc \"{info.Url}\" -O \"{Setup.DownloadPath}/{info.Name}\" && date' > \"{Setup.DownloadPath}/{info.Name}.log\" &";
+            string scriptPath = $"{Setup.DownloadPath}/{info.Name}.download.sh";
+            string downloadPath = $"{Setup.DownloadPath}/{info.Name}";
+            string logPath = $"{Setup.DownloadPath}/{info.Name}.log";
+
+            string script = string.Format("date; " + DownloadCommand + "; echo $?; date;", info.Url.Escape(), downloadPath.Escape());
+
+            string createScriptCommand = $"echo \"{script.Escape()}\" > \"{scriptPath.Escape()}\"";
+            RunCommand(createScriptCommand);
+
+            string startDownloadCmd = $"nohup bash \"{scriptPath.Escape()}\" > \"{logPath.Escape()}\" &";
             RunCommand(startDownloadCmd);
         }
 
@@ -164,7 +184,7 @@ namespace BitportViewer_SSH
                 var activeDownloads = result.SplitLines()
                     .Select(o => Regex.Match(o, "^ *([^ ]+) *([^ ]+) *([^ ]+) (.*)$"))
                     .Where(o => o.Success)
-                    .Select(o => new { pid = o.Groups[1].Value.TryParseInt(), nameMatch = Regex.Match(o.Groups[4].Value, "^wget -qc (.*?) -O (.*?)$") })
+                    .Select(o => new { pid = o.Groups[1].Value.TryParseInt(), nameMatch = Regex.Match(o.Groups[4].Value, DownloadCommandRegex) })
                     .Where(o => o.pid.HasValue && o.nameMatch.Success)
                     .Select(o => new { pid = o.pid.Value, url = o.nameMatch.Groups[1].Value.TrimQuotes(), path = o.nameMatch.Groups[2].Value.TrimQuotes() })
                     .ToArray();
@@ -179,10 +199,24 @@ namespace BitportViewer_SSH
 
 
                 return Enumerable.Empty<DownloadState>()
-                    .Concat(activeDownloads.Select(o => DownloadState.CreateActive(o.path, o.pid)))
+                    .Concat(activeDownloads.Select(o => DownloadState.CreateActive(o.path, o.pid, GetCompletion(o.path+".log"))))
                     .Concat(finishedDownloads.Select(o => DownloadState.CreateFinished(o)))
                     .ToArray();
             }
+        }
+
+        private int GetCompletion(string logPath)
+        {
+            string cmd = $"cat \"{logPath}\" | tail -n 5";
+            string result = RunCommand(cmd);
+            return result
+                 .SplitLines()
+                 .Select(o => Regex.Match(o, @".* (\d+)% \|\** *\| *(\d*[a-zA-Z]) *(\d+):(\d+):(\d+) ETA"))
+                 .Where(o => o.Success)
+                 .Select(o => o.Groups[1].Value.TryParseInt())
+                 .Where(o => o.HasValue)
+                 .Select(o => o.Value)
+                 .LastOrDefault();
         }
 
         public void StopDownloadingFile(DownloadState state)
@@ -201,14 +235,17 @@ namespace BitportViewer_SSH
 
         private string RunCommand(string cmd)
         {
-            var result = sshClient.CreateCommand(cmd);
-            result.CommandTimeout = TimeSpan.FromSeconds(3);
-            var asyncRes = result.BeginExecute();
-            while (!asyncRes.IsCompleted)
+            lock (_communicationLock)
             {
-                Thread.Sleep(100);
+                var command = sshClient.CreateCommand(cmd);
+                command.CommandTimeout = TimeSpan.FromSeconds(10);
+                var asyncRes = command.BeginExecute();
+                while (!asyncRes.IsCompleted)
+                {
+                    Thread.Sleep(100);
+                }
+                return command.Result;
             }
-            return result.Result;
         }
 
         private void ValidateIsConnected()
@@ -251,5 +288,11 @@ namespace BitportViewer_SSH
             return text.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
         }
 
+
+        public static string Escape(this string text)
+        {
+            return text
+                .Replace("\"", "\\\"");
+        }
     }
 }
