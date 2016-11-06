@@ -1,0 +1,91 @@
+﻿<UserControl x:Class="BitportViewer_DownloadManager.DownloadManagerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:BitportViewer_DownloadManager"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+             xmlns:ssh="clr-namespace:BitportViewer_SSH;assembly=BitportViewer_SSH"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+
+    <Grid x:Name="rootGrid">
+        <Grid.DataContext>
+            <local:DownloadManagerViewModel/>
+        </Grid.DataContext>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+
+        <GroupBox Grid.Row="0">
+            <Grid  >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <xctk:PropertyGrid  IsCategorized="False" ShowSearchBox="False" ShowSortOptions="False" ShowSummary="False" ShowTitle="False"
+                                    SelectedObject="{Binding DeviceSetup}">
+                </xctk:PropertyGrid>
+                <StackPanel Grid.Column="1" Orientation="Vertical" >
+                    <Label Content="{Binding IsConnected}">
+                    </Label>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Vertical" >
+                    <Button Command="{Binding Reconnect}">Reconect</Button>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+        <GroupBox Grid.Row="1">
+            <Grid  >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <xctk:PropertyGrid x:Name="newDownload" IsCategorized="False" ShowSearchBox="False" ShowSortOptions="False" ShowSummary="False" ShowTitle="False">
+                    <xctk:PropertyGrid.SelectedObject>
+                        <local:DownloadInfoViewModel/>
+                    </xctk:PropertyGrid.SelectedObject>
+
+                </xctk:PropertyGrid>
+                <StackPanel Grid.Column="1" Orientation="Vertical" >
+
+                    <Button Command="{Binding StartDownloadingFile}" CommandParameter="{Binding ElementName=newDownload,Path=SelectedObject}">StartDownloadingFile</Button>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+        <ListBox Grid.Row="2" ItemsSource="{Binding Downloads}" HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type ssh:DownloadState}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="auto"/>
+                            <ColumnDefinition Width="auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Content="{Binding Path}">
+
+                        </Label>
+                        <StackPanel Grid.Column="1" >
+
+                            <TextBlock Text="{Binding Status}">
+
+                            </TextBlock>
+                            <TextBlock Text="{Binding Pid}">
+
+                            </TextBlock>
+                        </StackPanel>
+                        <Button Grid.Column="2"
+                                Command="{Binding ElementName=rootGrid,Path=DataContext.StopDownloadingFile}"
+                                CommandParameter="{Binding}">
+                            Stop
+                        </Button>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
+</UserControl>
