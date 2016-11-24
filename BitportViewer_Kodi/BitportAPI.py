@@ -14,7 +14,7 @@ class BitportAPI:
     def __init__(self,tokenPath):
         tokenJsonFile = open(tokenPath, 'r')
         tokenJson = tokenJsonFile.read()
-        token=json.loads(tokenJson)
+        token = json.loads(tokenJson)
         self.access_token = token.get("access_token")
 
 
@@ -30,33 +30,33 @@ class BitportAPI:
         data = resp.json()
 
         if data is None:
-            return BP_RawResult();
+            return BP_RawResult()
 
-        data=data.get("data")
+        data = data.get("data")
         
         if data is None or len(data) == 0:
-            return BP_RawResult();
+            return BP_RawResult()
         
-        data=data[0]
+        data = data[0]
         
         if data is None:
-            return BP_RawResult();
+            return BP_RawResult()
                 
         files = data.get("files")
         if files is None:
-            files=[]
+            files = []
 
         folders = data.get("folders")
         if folders is None:
-            filesfolders=[]
+            filesfolders = []
 
         #for folder in folders:
         #    subFiles = self.getFiles(folder["code"])
         #    files.extend(subFiles)
 
-        result=BP_RawResult();
-        result.folders=folders;
-        result.files=files;
+        result = BP_RawResult()
+        result.folders = folders
+        result.files = files
         return result
 
     def getUrl(self,code,converted):
@@ -65,8 +65,8 @@ class BitportAPI:
         else:
             operation = "download"
         getFileUrlUrl = self.apiBaseUrl + "/files/" + code + "/" + operation
-
-        return getFileUrlUrl+"|Authorization=Bearer "+self.access_token;
+        
+        return getFileUrlUrl + "|Authorization=Bearer " + self.access_token
 
         #resp = requests.get(getFileUrlUrl,headers={
         #    'Authorization':'Bearer ' + self.access_token,
@@ -79,7 +79,7 @@ class BitportAPI:
         resultFile = BP_File()
         resultFile.code = file.get("code")
         resultFile.filename = file.get("name")
-        resultFile.converted = file.get("conversion_status")=="converted"
+        resultFile.converted = file.get("conversion_status") == "converted"
 
         nameMatch = self.getNameRegex.match(resultFile.filename)
 
@@ -94,7 +94,7 @@ class BitportAPI:
             else:
                 resultFile.name = resultFile.filename
         else:
-            resultFile.name=resultFile.filename
+            resultFile.name = resultFile.filename
 
         if file.get("video"):
             if self.isTvShowRegex.match(resultFile.name) is not None:
@@ -103,20 +103,20 @@ class BitportAPI:
                 resultFile.type = BP_FileType.movie
         else:
             resultFile.type = BP_FileType.other
-        return resultFile;
+        return resultFile
     
     def convertFolder(self, folder):
         
         resultFile = BP_Folder()
         resultFile.code = folder.get("code")
         resultFile.name = folder.get("name")
-        return resultFile;
+        return resultFile
 
     def getFolder(self,code):
         rawResult = self.getFolder_raw(code)
 
         
-        result=[]
+        result = []
         for file in rawResult.files:
             resultFile = self.convertFile(file)
             result.append(resultFile)

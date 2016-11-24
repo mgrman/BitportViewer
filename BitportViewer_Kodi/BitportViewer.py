@@ -21,25 +21,41 @@ api = BitportAPI(tokenPath)
 _url = sys.argv[0]
 _handle = int(sys.argv[1])
 
-
-
-def get_list_videoItem(video,stream):
-
-    label = video.name
-    if stream:
-        label = label + " (stream)"
-        mimeType="video/mp4"
-    else:
-        mimeType = mimetypes.guess_type(video.filename, strict=False)[0]
-        
-    list_item = xbmcgui.ListItem(label=label)
-    list_item.setInfo('video', {'title':label })
+def  play_video(code,name,filename,stream):
+    
+    mimeType = mimetypes.guess_type(filename, strict=False)[0]
+    url=api.getUrl(code,stream)        
+    list_item = xbmcgui.ListItem(label=name, path=url)
+    list_item.setInfo('video', {'title':name })
     list_item.setProperty('IsPlayable', 'true')
-
     list_item.setProperty('mimetype', mimeType)
+    
+    xbmc.Player().play(item=url, listitem=list_item)
+    
 
-    url=api.getUrl(video.code,stream)
+def get_list_videoItem(video):
 
+    mimeType = mimetypes.guess_type(video.filename, strict=False)[0]
+    url=api.getUrl(video.code,False)
+        
+    list_item = xbmcgui.ListItem(label=video.name,path=url)
+    list_item.setInfo('video', {'title':video.name })
+    list_item.setProperty('IsPlayable', 'true')
+    list_item.setProperty('mimetype', mimeType)
+    
+    streamUrl=api.getUrl(video.code,True)
+    
+    streamPlayQuery = {
+        "action":"play",
+        "code":video.code,
+        "name":video.name,
+        "filename":video.filename,
+        "stream":True
+        }
+    streamPlayUrl = _url + "?" + urllib.urlencode(streamPlayQuery)
+    
+    list_item.addContextMenuItems([('Play stream','XBMC.RunPlugin('+streamPlayUrl+')')])
+    
     is_folder = False
     return (url, list_item, is_folder)
 
@@ -68,9 +84,7 @@ def list_videos(code):
         if item.__class__ is BP_File:
             if item.type is BP_FileType.other:
                 continue
-            listing.append(get_list_videoItem(item,False))
-            if item.converted:
-                listing.append(get_list_videoItem(item,True))
+            listing.append(get_list_videoItem(item))
         elif item.__class__ is BP_Folder:
             listing.append(get_list_folderItem(item))
 
